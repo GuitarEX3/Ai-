@@ -6,14 +6,16 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
 # ====== CONFIG ======
-SOURCE      = 0                                   # 0 = webcam หรือ URL/IP Camera
-KNOWN_JSON  = "known_db.json"                     # ฐานข้อมูลคนรู้จัก
-TOLERANCE   = 0.5                                 # ค่าความคล้ายใบหน้า
-FONT_PATH   = "font/NotoSansThai_Condensed-Regular.ttf"  # ฟอนต์ภาษาไทย (ต้องมีไฟล์)
+SOURCE      = 0  # 0 = webcam หรือ URL/IP Camera
+KNOWN_JSON  = "known_db.json"
+TOLERANCE   = 0.5
 FONT_SIZE   = 32
 # ====================
 
-# โหลดฐานข้อมูลคนรู้จัก
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+FONT_PATH = os.path.join(SCRIPT_DIR, "font", "NotoSansThai_Condensed-Regular.ttf")
+
+# โหลดฐานข้อมูลหลายมุมหลายภาพ
 def load_known_faces():
     if not os.path.exists(KNOWN_JSON):
         print("⚠️ ไม่พบไฟล์ฐานข้อมูล:", KNOWN_JSON)
@@ -23,30 +25,35 @@ def load_known_faces():
         known_data = json.load(f)
 
     known_encodings, known_info = [], []
-    for person in known_data:
-        if os.path.exists(person["image"]):
-            img = face_recognition.load_image_file(person["image"])
-            enc = face_recognition.face_encodings(img)
-            if enc:
-                known_encodings.append(enc[0])
-                known_info.append({
-                    "name": person["name"],
-                    "nickname": person.get("nickname", ""),
-                    "relation": person.get("relation", "")
-                })
 
-    print(f"✅ โหลดฐานข้อมูล {len(known_info)} คนสำเร็จ")
+    for person in known_data:
+        for img_path in person.get("images", []):
+            img_full = os.path.join(SCRIPT_DIR, img_path)
+            if os.path.exists(img_full):
+                img = face_recognition.load_image_file(img_full)
+                encs = face_recognition.face_encodings(img)
+                if encs:
+                    known_encodings.append(encs[0])
+                    known_info.append({
+                        "name": person.get("name", ""),
+                        "nickname": person.get("nickname", ""),
+                        "relation": person.get("relation", "")
+                    })
+
+    print(f"✅ โหลดฐานข้อมูล {len(known_encodings)} encoding สำเร็จ")
     return known_encodings, known_info
 
-
-# วาดข้อความภาษาไทยบน OpenCV image
-def put_text_thai(img, text, position, font_path=FONT_PATH, font_size=FONT_SIZE, color=(0,255,0)):
+# วาดข้อความภาษาไทย
+def put_text_thai(img, text, position, font_size=FONT_SIZE, color=(0,255,0)):
     pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(pil_img)
-    font = ImageFont.truetype(font_path, font_size)
+    try:
+        font = ImageFont.truetype(FONT_PATH, font_size)
+    except Exception:
+        print("⚠️ ไม่พบฟอนต์ ใช้ default font แทน")
+        font = ImageFont.load_default()
     draw.text(position, text, font=font, fill=color)
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-
 
 # ==================== MAIN ====================
 def main():
@@ -60,7 +67,7 @@ def main():
         if not ret:
             break
 
-        rgb_frame = frame[:, :, ::-1]  # BGR -> RGB
+        rgb_frame = frame[:, :, ::-1]
         face_locations = face_recognition.face_locations(rgb_frame)
         face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
@@ -78,8 +85,6 @@ def main():
 
             # วาดกรอบรอบหน้า
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-            # แสดงชื่อ + ความสัมพันธ์
             frame = put_text_thai(frame, name_text, (left, top - 40))
 
         cv2.imshow("Face Recognition", frame)
@@ -89,6 +94,6 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
 
-
 if __name__ == "__main__":
     main()
+
