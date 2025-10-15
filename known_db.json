@@ -1,24 +1,26 @@
 [
   {
     "id": 1,
-    "name": "เจษฎาพร เขียวค้า",
-    "nickname": "กีต้าร์",
-    "relation": "กูเอง",
+    "name": "สมชาย สมสม",
+    "nickname": "คิด",
+    "relation": "พ่อ",
     "images": [
-      "know_face/WIN_20250821_19_57_20_Pro.jpg"
+      "know_face/รูปหน้า.jpg"
     ]
   },
   {
     "id": 2,
-    "name": "เจษฎาพร เขียวค้า",
-    "nickname": "กีต้าร์",
-    "relation": "กูเอง",
+    "name": "สมคิด สาสา",
+    "nickname": "สมคิด",
+    "relation": "ผู้ร้ายหนีคดี",
     "images": [
-      "know_face/face.jpg",
-      "know_face/back.jpg"
+      "know_face/รูปหน้า.jpg",
+      "know_face/รูปหน้าขวา.jpg",
+      "know_face/รูปหน้าซ้าย.jpg"
     ]
   }
 ]
+
 
 
 
